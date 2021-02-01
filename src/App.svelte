@@ -1,77 +1,101 @@
 <script>
-	import {onMount, onDestroy} from 'svelte';
-	import { fly } from 'svelte/transition';
+	import {onMount} from 'svelte';
 	import  {store}  from './store';
-	import Article from './components/Article.svelte';
-
+	import { fade } from 'svelte/transition';
+	import Snackbar from './components/Snackbar.svelte';
+	import Page from './components/Page.svelte';
+	import Thumbnail from './components/Thumbnail.svelte';
+	import Youtube from './components/Youtube.svelte';
+   
 	let data = [];
 	const API_KEY = "e788d0a3";
 	const query = 'avenger';
 
-	let contador = 1;
+	const videos = [
+		'rDHQhXXvMMU',
+		'pKoH9GkEKxQ',
+		'JwghZEmvmb8',
+		'rDHQhXXvMMU',
+		'pKoH9GkEKxQ',
+		'JwghZEmvmb8',
+		'rDHQhXXvMMU',
+		'pKoH9GkEKxQ',
+		'JwghZEmvmb8',
+		'rDHQhXXvMMU'
+	];
 
-	const params = {
-		API_KEY, query, contador
-	}
-
-	const increment = () => {contador++}
-	const decrement = () => {contador--}
-	
-	$: esCinco = contador === 5 ? "Es cinco" : "";
-		
-	let repe;
 	onMount( async() => {
-		repe = setInterval( () => {
-			console.log("Repitiendo");
-			contador += 1;
-		}, 1000);
-		//i:una sola peli. // s:varias 
-		let response = await fetch(`http://www.omdbapi.com/?s=${query}&apikey=e788d0a3&plot=short`); 
-		response = await response.json();
-		// esto se hace para que Svelte detecte cambios y actúe en consecuencia.
-		response = [...response.Search].reduce( (container, item) => {
-			const objMovie = {
-				id: item.imdbID,
-				url: item.Poster.replace("X300", ""),
-				title: item.Title
-			};
-			container.push(objMovie);
-			return container;
-		}, []);
-		data = response;
-		const first = data[0];
-		store.update(state => ({
-			...state,
-			id: first.id,
-			url: first.url,
-			title: first.title
-		}));
-		console.log("response: ", response, " data: ", data, " : state: ", $store);
-	});
+		try {
+			//i:una sola peli. // s:varias 
+			const protocolo = window.location.protocol != 'https:' ? 'http' : 'https';
+			let response = await fetch(`${protocolo}://www.omdbapi.com/?s=${query}&apikey=e788d0a3&plot=short`); 
+			response = await response.json();
 
-	onDestroy( () => {
-		clearInterval(repe);
-	})
+			// esto se hace para que Svelte detecte cambios y actúe en consecuencia.
+			response = [...response.Search].reduce( (container, item) => {
+				const objMovie = {
+					id: item.imdbID,
+					url: item.Poster.replace("X300", ""),
+					title: item.Title
+				};
+				container.push(objMovie);
+				return container;
+			}, []);
+
+			response = response.map((item, index) => {
+				const movie = item;
+				movie.trailer = videos[index];
+				return movie;
+			});
+
+			data = response;
+			
+			const first = data[0];
+			store.update(state => ({
+				...state,
+				id: first.id,
+				url: first.url,
+				title: first.title,
+				trailer: first.trailer
+			}));
+
+		} catch (error) {
+
+			console.error(error.message);
+			store.update(state => ({
+				...state,
+				show: true,
+				type: 'error',
+				title: error.message
+			}));
+		}
+		
+	});
 
 </script>
 
 <main>
-	<div class="loader-container">
-		<div class="loader">
-			{#each new Array(8) as miDov }
-				 <div></div>
-			{/each}
-		</div>
-		<!-- <button on:click={increment}>+</button>
-		<button on:click={decrement}>-</button> -->
-		{`${contador}, esCinco: ${esCinco}`}
-		{#if contador > 5 && contador < 15 }
-			 <div transition:fly="{{ y: 200, duration: 2000}}">
+	<Snackbar />
+	
+	<Youtube />
 
-				 <Article  {...params} {data} on:click/>
+	{#if data.length > 0}
+		 <div transition:fade>
+			 <Page />
+		 </div>
+		 <Thumbnail {data}/>
+	{:else}
+		<!-- Hace el loading -->
+		 <div class="loader-container">
+			 <div class="loader">
+				 {#each new Array(8) as miDiv }
+					  <div></div>
+				 {/each}
 			 </div>
-		{/if}
-	</div>
+		 </div>
+	{/if}
+
+	
 
 </main>
 

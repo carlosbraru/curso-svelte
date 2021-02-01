@@ -20,7 +20,8 @@
         left: 0;
         right: 0;
         z-index: 10;
-        font-family: var(--font-family);
+        /* font-family: var(--font-family); */
+        text-align: center;
     }
 
     .snackbar-container {
@@ -40,7 +41,7 @@
     span {
         color: var(--white);
         flex-grow: 3;
-        font-size: 12px;
+        font-size: 1.2em;
         user-select: none;
     }
 
