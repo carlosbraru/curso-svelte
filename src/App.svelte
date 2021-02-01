@@ -1,11 +1,32 @@
 <script>
+	import {onMount, onDestroy} from 'svelte';
+	import { fly } from 'svelte/transition';
+	import  {store}  from './store';
+	import Article from './components/Article.svelte';
+
 	let data = [];
 	const API_KEY = "e788d0a3";
 	const query = 'avenger';
+
+	let contador = 1;
+
+	const params = {
+		API_KEY, query, contador
+	}
+
+	const increment = () => {contador++}
+	const decrement = () => {contador--}
+	
+	$: esCinco = contador === 5 ? "Es cinco" : "";
 		
-	(async () => {	
+	let repe;
+	onMount( async() => {
+		repe = setInterval( () => {
+			console.log("Repitiendo");
+			contador += 1;
+		}, 1000);
 		//i:una sola peli. // s:varias 
-		let response = await fetch(`http://www.omdbapi.com/?s=${query}&apikey=e788d0a3&plot=short`); pelis
+		let response = await fetch(`http://www.omdbapi.com/?s=${query}&apikey=e788d0a3&plot=short`); 
 		response = await response.json();
 		// esto se hace para que Svelte detecte cambios y actúe en consecuencia.
 		response = [...response.Search].reduce( (container, item) => {
@@ -17,24 +38,41 @@
 			container.push(objMovie);
 			return container;
 		}, []);
-		console.log("response: ", response);
-	})();
+		data = response;
+		const first = data[0];
+		store.update(state => ({
+			...state,
+			id: first.id,
+			url: first.url,
+			title: first.title
+		}));
+		console.log("response: ", response, " data: ", data, " : state: ", $store);
+	});
+
+	onDestroy( () => {
+		clearInterval(repe);
+	})
 
 </script>
 
 <main>
 	<div class="loader-container">
 		<div class="loader">
-			<div></div>
-			<div></div>
-			<div></div>
-			<div></div>
-			<div></div>
-			<div></div>
-			<div></div>
-			<div></div>
+			{#each new Array(8) as miDov }
+				 <div></div>
+			{/each}
 		</div>
+		<!-- <button on:click={increment}>+</button>
+		<button on:click={decrement}>-</button> -->
+		{`${contador}, esCinco: ${esCinco}`}
+		{#if contador > 5 && contador < 15 }
+			 <div transition:fly="{{ y: 200, duration: 2000}}">
+
+				 <Article  {...params} {data} on:click/>
+			 </div>
+		{/if}
 	</div>
+
 </main>
 
 <style>
